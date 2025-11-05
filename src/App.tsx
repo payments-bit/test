@@ -125,14 +125,34 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
           </div>
         )}
 
-        <a
-          href={`https://${product.domain}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-400 hover:text-blue-300 mb-2 truncate block"
-        >
-          {product.domain}
-        </a>
+        {/* Domain ve Niş (Niche) aynı satırda */}
+        <div className="flex justify-between items-center mb-2">
+          <a
+            href={`https://${product.domain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-400 hover:text-blue-300 truncate max-w-[60%]"
+            title={product.domain}
+          >
+            {product.domain}
+          </a>
+          {product.niche && (
+            <span className="inline-block px-2 py-0.5 bg-gray-700 text-gray-300 rounded-full text-xs font-medium truncate max-w-[40%]" title={`Niş: ${product.niche}`}>
+              {product.niche}
+            </span>
+          )}
+        </div>
+        
+        {/* Eski Niche bloğu kaldırıldı */}
+        {/*
+        {product.niche && (
+          <div className="mb-3">
+            <span className="inline-block px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs font-medium">
+              Niş: {product.niche}
+            </span>
+          </div>
+        )}
+        */}
 
         <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 min-h-[3rem] flex-grow">
           {product.title || product.domain}
@@ -154,14 +174,7 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
             <span className="text-green-400 font-bold text-lg">{product.ciro || '-'}</span>
           </div>
         </div>
-
-        {product.niche && (
-          <div className="mb-3">
-            <span className="inline-block px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs font-medium">
-              Niş: {product.niche}
-            </span>
-          </div>
-        )}
+        
 
         <div className="flex gap-2 mt-auto pt-3 border-t border-gray-700">
           <a
@@ -189,12 +202,21 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
   );
 }
 
+// Yeni state eklendi: Her pazarın toplam kayıt sayısını tutmak için
+interface TotalCounts {
+  TRY: number;
+  USD: number;
+  EUR: number;
+}
+
+
 function App() {
   const [activeTab, setActiveTab] = useState<'TRY' | 'USD' | 'EUR'>('TRY');
   const [products, setProducts] = useState<ScrapedData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0); // Aktif pazar için sayfa sayısını hesaplamak için kullanılır
+  const [totalCounts, setTotalCounts] = useState<TotalCounts>({ TRY: 0, USD: 0, EUR: 0 }); // Tüm pazarların toplam sayısını tutar
 
   const [filterNiche, setFilterNiche] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
@@ -203,6 +225,33 @@ function App() {
 
   const ITEMS_PER_PAGE = 25;
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+
+  // Toplam kayıt sayılarını (filtresiz) tüm pazarlar için çekme fonksiyonu
+  const loadTotalCounts = useCallback(async () => {
+    try {
+      const currencies = ['TRY', 'USD', 'EUR'];
+      const counts: Partial<TotalCounts> = {};
+
+      for (const currency of currencies) {
+        // Not: totalRecords sadece listelenen ve açık ürünler için sayılır
+        const { count, error } = await supabase
+          .from('scraped_data')
+          .select('id', { count: 'exact', head: true })
+          .eq('"Currency"', currency)
+          .eq('listedurum', true)
+          .eq('"Durum"', 'open');
+        
+        if (!error && count !== null) {
+          counts[currency as keyof TotalCounts] = count;
+        } else if (error) {
+          console.error(`Error loading total count for ${currency}:`, error);
+        }
+      }
+      setTotalCounts(counts as TotalCounts);
+    } catch (error) {
+      console.error('Error loading total counts:', error);
+    }
+  }, []);
 
   const loadProducts = useCallback(async (currency: string, page: number) => {
     setIsLoading(true);
@@ -225,7 +274,6 @@ function App() {
       if (filterTitle) {
         query = query.ilike('title', `%${filterTitle}%`);
       }
-      // Min/Max Satış filtreleme mantığı kaldırıldı.
 
       const { data, error, count } = await query
         .order('date', { ascending: false })
@@ -246,15 +294,18 @@ function App() {
     }
 
     setIsLoading(false);
-  }, [filterNiche, filterDomain, filterTitle]); // Bağımlılıklardan filterCiroMin ve filterCiroMax kaldırıldı.
+  }, [filterNiche, filterDomain, filterTitle]);
 
   useEffect(() => {
     loadProducts(activeTab, currentPage);
-  }, [activeTab, currentPage, loadProducts]);
+    // Her tab değiştiğinde veya sayfa yüklendiğinde toplam sayıları da çek
+    loadTotalCounts(); 
+  }, [activeTab, currentPage, loadProducts, loadTotalCounts]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, filterNiche, filterDomain, filterTitle]); // Bağımlılıklardan filterCiroMin ve filterCiroMax kaldırıldı.
+    // Filtreler değiştiğinde totalCounts'u tekrar çekmeye gerek yok, sadece aktif tab'ın totalRecords'u güncellenecek
+  }, [activeTab, filterNiche, filterDomain, filterTitle]);
 
   useEffect(() => {
     const channel = supabase
@@ -264,6 +315,7 @@ function App() {
         { event: '*', schema: 'public', table: 'scraped_data' },
         () => {
           loadProducts(activeTab, currentPage);
+          loadTotalCounts(); // Canlı güncellemelerde toplam sayıları da yenile
         }
       )
       .subscribe();
@@ -271,7 +323,7 @@ function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadProducts, activeTab, currentPage]);
+  }, [loadProducts, loadTotalCounts, activeTab, currentPage]); // loadTotalCounts bağımlılık olarak eklendi
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -280,45 +332,47 @@ function App() {
           <div className="flex items-center gap-3 mb-8">
           </div>
 
-          {/* Pazar Butonları ve Filtreleri Birleştirildi */}
           <div className="w-full max-w-4xl bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
-            {/* Pazar Seçimi */}
-            <div className="flex gap-3 bg-gray-900 p-2 rounded-xl border border-gray-700 mb-6">
-              <button
-                onClick={() => setActiveTab('TRY')}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  activeTab === 'TRY'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                TR Pazarı
-              </button>
-              <button
-                onClick={() => setActiveTab('USD')}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  activeTab === 'USD'
-                    ? 'bg-green-600 text-white shadow-lg'
-                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                USA Pazarı
-              </button>
-              <button
-                onClick={() => setActiveTab('EUR')}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  activeTab === 'EUR'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                EU Pazarı
-              </button>
-            </div>
-
-            {/* Filtreler - 4 Kolonlu Yeni Düzen */}
+            
+            {/* Pazar Seçimi ve Filtreler Tek Satırda (4x4 Düzeninin Bir Parçası) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
+              
+              {/* Pazar Seçimi Butonları - Daha kompakt hale getirildi */}
+              <div className="lg:col-span-4 flex gap-3 bg-gray-900 p-2 rounded-xl border border-gray-700 mb-4">
+                <button
+                  onClick={() => setActiveTab('TRY')}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    activeTab === 'TRY'
+                      ? 'bg-red-600 text-white shadow-lg'
+                      : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  TR Pazarı ({totalCounts.TRY.toLocaleString()})
+                </button>
+                <button
+                  onClick={() => setActiveTab('USD')}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    activeTab === 'USD'
+                      ? 'bg-green-600 text-white shadow-lg'
+                      : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  USA Pazarı ({totalCounts.USD.toLocaleString()})
+                </button>
+                <button
+                  onClick={() => setActiveTab('EUR')}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    activeTab === 'EUR'
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  EU Pazarı ({totalCounts.EUR.toLocaleString()})
+                </button>
+              </div>
+
+              {/* Filtreler - 4 Kolonlu Düzen */}
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Niş Ara</label>
                 <input
                   type="text"
@@ -329,7 +383,7 @@ function App() {
                 />
               </div>
 
-              <div>
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Domain Ara</label>
                 <input
                   type="text"
@@ -340,7 +394,7 @@ function App() {
                 />
               </div>
 
-              <div>
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Ürün Ara</label>
                 <input
                   type="text"
@@ -351,8 +405,8 @@ function App() {
                 />
               </div>
               
-              {/* Filtre Temizleme Butonu 4. Kolona yerleştirildi */}
-              <div className="flex flex-col justify-end">
+              {/* Filtre Temizleme Butonu */}
+              <div className="lg:col-span-1 flex flex-col justify-end">
                 <button
                   onClick={() => {
                     setFilterNiche('');
@@ -364,13 +418,12 @@ function App() {
                   Filtreleri Temizle
                 </button>
               </div>
-
-              {/* Min. Satış ve Max. Satış inputları kaldırıldı */}
             </div>
           </div>
 
           {!isLoading && (
             <p className="text-gray-400 text-lg">
+              {/* Toplam ürün sayısı, uygulanan filtrelere göre gösteriliyor */}
               Toplam {totalRecords} ürün bulundu
             </p>
           )}
