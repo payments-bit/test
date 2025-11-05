@@ -211,7 +211,7 @@ function App() {
   const [filterTitle, setFilterTitle] = useState('');
   
   // ITEMS_PER_PAGE 30 olarak güncellendi.
-  const ITEMS_PER_PAGE = 20; 
+  const ITEMS_PER_PAGE = 30; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
   // Filtrelerin aktif olup olmadığını kontrol eden değişken
@@ -276,8 +276,8 @@ function App() {
 
       if (error) {
         console.error('Error loading products:', error);
-        setProducts([]);
-        setTotalRecords(0);
+        setProducts(data as ScrapedData[] || []);
+        setTotalRecords(count || 0);
       } else {
         setProducts(data as ScrapedData[] || []);
         setTotalRecords(count || 0);
@@ -319,13 +319,14 @@ function App() {
   }, [loadProducts, loadTotalCounts, activeTab, currentPage]);
 
   return (
+    // Ana container max-w-[1200px] olarak güncellendi
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="max-w-[1920px] mx-auto px-6 py-8">
+      <div className="max-w-[1200px] mx-auto px-6 py-8">
         <div className="mb-8 flex flex-col items-center">
           <div className="flex items-center gap-3 mb-8">
           </div>
 
-          <div className="w-full max-w-4xl bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
+          <div className="w-full bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               
@@ -434,7 +435,8 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
+            {/* Ürün kartı ızgarası 4 sütun olarak güncellendi */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-6 mb-8">
               {products.map((product) => (
                 <ProductCard
                   key={product.id}
