@@ -210,7 +210,7 @@ function App() {
   const [filterDomain, setFilterDomain] = useState('');
   const [filterTitle, setFilterTitle] = useState('');
   
-  // ITEMS_PER_PAGE 5 olarak güncellendi.
+  // ITEMS_PER_PAGE 30 olarak güncellendi.
   const ITEMS_PER_PAGE = 20; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
@@ -268,9 +268,9 @@ function App() {
       }
 
       const { data, error, count } = await query
-        // Ciroya göre azalan sırada sıralama eklendi
-        // nullsFirst: false, ciro değeri boş olanları en sona atar
-        .order('ciro', { ascending: false, nullsFirst: false }) 
+        // Ciro (text) alanında doğru sayısal sıralama yapılamadığı için, 
+        // en son eklenenleri (date) öne çıkarma mantığına geri dönüldü.
+        .order('created_at', { ascending: false }) 
         .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) {
@@ -348,7 +348,6 @@ function App() {
                       : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
                   }`}
                 >
-                  {/* Etiket 'USA Pazarı' olarak değiştirildi */}
                   USA Pazarı ({totalCounts.USD.toLocaleString()})
                 </button>
                 <button
