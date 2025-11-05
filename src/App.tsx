@@ -211,7 +211,7 @@ function App() {
   const [filterTitle, setFilterTitle] = useState('');
   
   // ITEMS_PER_PAGE 30 olarak güncellendi.
-  const ITEMS_PER_PAGE = 30; 
+  const ITEMS_PER_PAGE = 20; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
   // Filtrelerin aktif olup olmadığını kontrol eden değişken
