@@ -211,7 +211,7 @@ function App() {
   const [filterTitle, setFilterTitle] = useState('');
   
   // ITEMS_PER_PAGE 5 olarak güncellendi.
-  const ITEMS_PER_PAGE = 20; 
+  const ITEMS_PER_PAGE = 5; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
   // Filtrelerin aktif olup olmadığını kontrol eden değişken
@@ -268,7 +268,9 @@ function App() {
       }
 
       const { data, error, count } = await query
-        .order('date', { ascending: false })
+        // Ciroya göre azalan sırada sıralama eklendi
+        // nullsFirst: false, ciro değeri boş olanları en sona atar
+        .order('ciro', { ascending: false, nullsFirst: false }) 
         .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) {
@@ -418,8 +420,6 @@ function App() {
             )}
 
           </div>
-
-          {/* Eski toplam ürün sayısı gösterimi kaldırıldı */}
 
         </div>
 
