@@ -36,6 +36,9 @@ export interface ScrapedData {
   image3: string | null;
 
   pazar: string | null;
+  
+  // <<< DEĞİŞİKLİK 1: Arayüze ciro_numeric eklendi
+  ciro_numeric?: number | null;
 }
 
 const COUNTRY_MAP: { [key: string]: string } = {
@@ -160,7 +163,11 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
 
           <div className="flex justify-between items-center">
             <span className="text-gray-400 text-sm">Tahmini Satış ($)</span>
-            <span className="text-green-400 font-bold text-lg">{product.ciro || '-'}</span>
+            
+            {/* // <<< DEĞİŞİKLİK 2: product.ciro (string) yerine product.ciro_numeric (sayısal) gösterildi */}
+            <span className="text-green-400 font-bold text-lg">
+              {product.ciro_numeric ? product.ciro_numeric.toLocaleString() : (product.ciro || '-')}
+            </span>
           </div>
         </div>
         
@@ -270,7 +277,9 @@ function App() {
       const { data, error, count } = await query
         // Ciroya göre azalan sıralama (text olduğu için alfabetik, ancak istenen buydu)
         // nullsFirst: false ayarı, ciro değeri olmayan (NULL) ürünleri listenin en sonuna atar.
-        .order('ciro', { ascending: false, nullsFirst: false }) // Ciro en yüksekten en düşüğe (NULL'lar sona)
+        
+        // <<< DEĞİŞİKLİK 3: Sıralama 'ciro' (string) yerine 'ciro_numeric' (sayısal) olarak güncellendi
+        .order('ciro_numeric', { ascending: false, nullsFirst: false }) // Ciro en yüksekten en düşüğe (NULL'lar sona)
         .order('id', { ascending: true }) // İkincil sıralama (tie-breaker) eklendi
         .range(offset, offset + ITEMS_PER_PAGE - 1);
 
