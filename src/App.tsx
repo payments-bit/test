@@ -211,7 +211,7 @@ function App() {
   const [filterTitle, setFilterTitle] = useState('');
   
   // ITEMS_PER_PAGE 30 olarak güncellendi.
-  const ITEMS_PER_PAGE = 20; 
+  const ITEMS_PER_PAGE = 30; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
   // Filtrelerin aktif olup olmadığını kontrol eden değişken
@@ -319,7 +319,7 @@ function App() {
   }, [loadProducts, loadTotalCounts, activeTab, currentPage]);
 
   return (
-    // Ana container max-w-[1200px] olarak güncellendi
+    // Ana container max-w-[1200px] olarak ayarlandı.
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         <div className="mb-8 flex flex-col items-center">
@@ -435,7 +435,7 @@ function App() {
           </div>
         ) : (
           <>
-            {/* Ürün kartı ızgarası 4 sütun olarak güncellendi */}
+            {/* Ürün kartı ızgarası: sm:2, lg, xl, 2xl için 4 sütun olarak ayarlandı. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-6 mb-8">
               {products.map((product) => (
                 <ProductCard
