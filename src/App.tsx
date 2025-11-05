@@ -211,7 +211,7 @@ function App() {
   const [filterTitle, setFilterTitle] = useState('');
   
   // ITEMS_PER_PAGE 30 olarak güncellendi.
-  const ITEMS_PER_PAGE = 20; 
+  const ITEMS_PER_PAGE = 30; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
   
   // Filtrelerin aktif olup olmadığını kontrol eden değişken
@@ -268,9 +268,10 @@ function App() {
       }
 
       const { data, error, count } = await query
-        // Ciro (text) alanında doğru sayısal sıralama yapılamadığı için, 
-        // en son eklenenleri (date) öne çıkarma mantığına geri dönüldü.
-        .order('created_at', { ascending: false }) 
+        // Ciroya göre azalan sıralama (text olduğu için alfabetik, ancak istenen buydu)
+        // nullsFirst: false ayarı, ciro değeri olmayan (NULL) ürünleri listenin en sonuna atar.
+        .order('ciro', { ascending: false, nullsFirst: false }) // Ciro en yüksekten en düşüğe (NULL'lar sona)
+        .order('id', { ascending: true }) // İkincil sıralama (tie-breaker) eklendi
         .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) {
