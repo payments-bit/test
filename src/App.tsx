@@ -199,8 +199,7 @@ function App() {
   const [filterNiche, setFilterNiche] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
   const [filterTitle, setFilterTitle] = useState('');
-  const [filterCiroMin, setFilterCiroMin] = useState('');
-  const [filterCiroMax, setFilterCiroMax] = useState('');
+  // filterCiroMin ve filterCiroMax kaldırıldı.
 
   const ITEMS_PER_PAGE = 25;
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
@@ -226,18 +225,7 @@ function App() {
       if (filterTitle) {
         query = query.ilike('title', `%${filterTitle}%`);
       }
-      if (filterCiroMin) {
-        const minVal = parseFloat(filterCiroMin);
-        if (!isNaN(minVal)) {
-          query = query.gte('ciro', minVal);
-        }
-      }
-      if (filterCiroMax) {
-        const maxVal = parseFloat(filterCiroMax);
-        if (!isNaN(maxVal)) {
-          query = query.lte('ciro', maxVal);
-        }
-      }
+      // Min/Max Satış filtreleme mantığı kaldırıldı.
 
       const { data, error, count } = await query
         .order('date', { ascending: false })
@@ -258,7 +246,7 @@ function App() {
     }
 
     setIsLoading(false);
-  }, [filterNiche, filterDomain, filterTitle, filterCiroMin, filterCiroMax]);
+  }, [filterNiche, filterDomain, filterTitle]); // Bağımlılıklardan filterCiroMin ve filterCiroMax kaldırıldı.
 
   useEffect(() => {
     loadProducts(activeTab, currentPage);
@@ -266,7 +254,7 @@ function App() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, filterNiche, filterDomain, filterTitle, filterCiroMin, filterCiroMax]);
+  }, [activeTab, filterNiche, filterDomain, filterTitle]); // Bağımlılıklardan filterCiroMin ve filterCiroMax kaldırıldı.
 
   useEffect(() => {
     const channel = supabase
@@ -292,41 +280,44 @@ function App() {
           <div className="flex items-center gap-3 mb-8">
           </div>
 
-          <div className="flex gap-3 bg-gray-800 p-2 rounded-xl border border-gray-700 mb-8">
-            <button
-              onClick={() => setActiveTab('TRY')}
-              className={`px-6 py-3 rounded-lg font-semibold text-base transition-all ${
-                activeTab === 'TRY'
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              TR Pazarı
-            </button>
-            <button
-              onClick={() => setActiveTab('USD')}
-              className={`px-6 py-3 rounded-lg font-semibold text-base transition-all ${
-                activeTab === 'USD'
-                  ? 'bg-green-600 text-white shadow-lg'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              USD Pazarı
-            </button>
-            <button
-              onClick={() => setActiveTab('EUR')}
-              className={`px-6 py-3 rounded-lg font-semibold text-base transition-all ${
-                activeTab === 'EUR'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              EU Pazarı
-            </button>
-          </div>
-
+          {/* Pazar Butonları ve Filtreleri Birleştirildi */}
           <div className="w-full max-w-4xl bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Pazar Seçimi */}
+            <div className="flex gap-3 bg-gray-900 p-2 rounded-xl border border-gray-700 mb-6">
+              <button
+                onClick={() => setActiveTab('TRY')}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  activeTab === 'TRY'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                TR Pazarı
+              </button>
+              <button
+                onClick={() => setActiveTab('USD')}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  activeTab === 'USD'
+                    ? 'bg-green-600 text-white shadow-lg'
+                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                USA Pazarı
+              </button>
+              <button
+                onClick={() => setActiveTab('EUR')}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  activeTab === 'EUR'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                EU Pazarı
+              </button>
+            </div>
+
+            {/* Filtreler - 4 Kolonlu Yeni Düzen */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Niş Ara</label>
                 <input
@@ -359,42 +350,23 @@ function App() {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Min. Satış ($)</label>
-                <input
-                  type="number"
-                  placeholder="Minimum"
-                  value={filterCiroMin}
-                  onChange={(e) => setFilterCiroMin(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition"
-                />
+              
+              {/* Filtre Temizleme Butonu 4. Kolona yerleştirildi */}
+              <div className="flex flex-col justify-end">
+                <button
+                  onClick={() => {
+                    setFilterNiche('');
+                    setFilterDomain('');
+                    setFilterTitle('');
+                  }}
+                  className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition"
+                >
+                  Filtreleri Temizle
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Max. Satış ($)</label>
-                <input
-                  type="number"
-                  placeholder="Maksimum"
-                  value={filterCiroMax}
-                  onChange={(e) => setFilterCiroMax(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition"
-                />
-              </div>
+              {/* Min. Satış ve Max. Satış inputları kaldırıldı */}
             </div>
-
-            <button
-              onClick={() => {
-                setFilterNiche('');
-                setFilterDomain('');
-                setFilterTitle('');
-                setFilterCiroMin('');
-                setFilterCiroMax('');
-              }}
-              className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition"
-            >
-              Filtreleri Temizle
-            </button>
           </div>
 
           {!isLoading && (
