@@ -143,17 +143,6 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
           )}
         </div>
         
-        {/* Eski Niche bloğu kaldırıldı */}
-        {/*
-        {product.niche && (
-          <div className="mb-3">
-            <span className="inline-block px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-xs font-medium">
-              Niş: {product.niche}
-            </span>
-          </div>
-        )}
-        */}
-
         <h3 className="text-white font-semibold text-base mb-3 line-clamp-2 min-h-[3rem] flex-grow">
           {product.title || product.domain}
         </h3>
@@ -202,7 +191,6 @@ function ProductCard({ product, showCountryBadge }: ProductCardProps) {
   );
 }
 
-// Yeni state eklendi: Her pazarın toplam kayıt sayısını tutmak için
 interface TotalCounts {
   TRY: number;
   USD: number;
@@ -215,16 +203,20 @@ function App() {
   const [products, setProducts] = useState<ScrapedData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0); // Aktif pazar için sayfa sayısını hesaplamak için kullanılır
-  const [totalCounts, setTotalCounts] = useState<TotalCounts>({ TRY: 0, USD: 0, EUR: 0 }); // Tüm pazarların toplam sayısını tutar
+  const [totalRecords, setTotalRecords] = useState(0); 
+  const [totalCounts, setTotalCounts] = useState<TotalCounts>({ TRY: 0, USD: 0, EUR: 0 }); 
 
   const [filterNiche, setFilterNiche] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
   const [filterTitle, setFilterTitle] = useState('');
-  // filterCiroMin ve filterCiroMax kaldırıldı.
-
-  const ITEMS_PER_PAGE = 25;
+  
+  // ITEMS_PER_PAGE 5 olarak güncellendi.
+  const ITEMS_PER_PAGE = 5; 
   const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  
+  // Filtrelerin aktif olup olmadığını kontrol eden değişken
+  const isFilterActive = !!filterNiche || !!filterDomain || !!filterTitle;
+
 
   // Toplam kayıt sayılarını (filtresiz) tüm pazarlar için çekme fonksiyonu
   const loadTotalCounts = useCallback(async () => {
@@ -298,13 +290,11 @@ function App() {
 
   useEffect(() => {
     loadProducts(activeTab, currentPage);
-    // Her tab değiştiğinde veya sayfa yüklendiğinde toplam sayıları da çek
     loadTotalCounts(); 
   }, [activeTab, currentPage, loadProducts, loadTotalCounts]);
 
   useEffect(() => {
     setCurrentPage(1);
-    // Filtreler değiştiğinde totalCounts'u tekrar çekmeye gerek yok, sadece aktif tab'ın totalRecords'u güncellenecek
   }, [activeTab, filterNiche, filterDomain, filterTitle]);
 
   useEffect(() => {
@@ -315,7 +305,7 @@ function App() {
         { event: '*', schema: 'public', table: 'scraped_data' },
         () => {
           loadProducts(activeTab, currentPage);
-          loadTotalCounts(); // Canlı güncellemelerde toplam sayıları da yenile
+          loadTotalCounts(); 
         }
       )
       .subscribe();
@@ -323,7 +313,7 @@ function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadProducts, loadTotalCounts, activeTab, currentPage]); // loadTotalCounts bağımlılık olarak eklendi
+  }, [loadProducts, loadTotalCounts, activeTab, currentPage]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -334,10 +324,9 @@ function App() {
 
           <div className="w-full max-w-4xl bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
             
-            {/* Pazar Seçimi ve Filtreler Tek Satırda (4x4 Düzeninin Bir Parçası) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Pazar Seçimi Butonları - Daha kompakt hale getirildi */}
+              {/* Pazar Seçimi Butonları */}
               <div className="lg:col-span-4 flex gap-3 bg-gray-900 p-2 rounded-xl border border-gray-700 mb-4">
                 <button
                   onClick={() => setActiveTab('TRY')}
@@ -357,6 +346,7 @@ function App() {
                       : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
                   }`}
                 >
+                  {/* Etiket 'USA Pazarı' olarak değiştirildi */}
                   USA Pazarı ({totalCounts.USD.toLocaleString()})
                 </button>
                 <button
@@ -419,14 +409,18 @@ function App() {
                 </button>
               </div>
             </div>
+            
+            {/* Filtre Aktifse Toplam Ürün Sayısı Burada Gösteriliyor */}
+            {isFilterActive && !isLoading && (
+                <p className="text-gray-400 text-md mt-4 pt-4 border-t border-gray-700">
+                    Filtrelerinizle Eşleşen Toplam <span className='font-bold text-white'>{totalRecords}</span> ürün bulundu.
+                </p>
+            )}
+
           </div>
 
-          {!isLoading && (
-            <p className="text-gray-400 text-lg">
-              {/* Toplam ürün sayısı, uygulanan filtrelere göre gösteriliyor */}
-              Toplam {totalRecords} ürün bulundu
-            </p>
-          )}
+          {/* Eski toplam ürün sayısı gösterimi kaldırıldı */}
+
         </div>
 
         {isLoading ? (
