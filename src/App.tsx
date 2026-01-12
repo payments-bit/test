@@ -275,12 +275,7 @@ function App() {
       }
 
       const { data, error, count } = await query
-        // Ciroya göre azalan sıralama (text olduğu için alfabetik, ancak istenen buydu)
-        // nullsFirst: false ayarı, ciro değeri olmayan (NULL) ürünleri listenin en sonuna atar.
-        
-        // <<< DEĞİŞİKLİK 3: Sıralama 'ciro' (string) yerine 'ciro_numeric' (sayısal) olarak güncellendi
-        .order('ciro_numeric', { ascending: false, nullsFirst: false }) // Ciro en yüksekten en düşüğe (NULL'lar sona)
-        .order('id', { ascending: true }) // İkincil sıralama (tie-breaker) eklendi
+        .order('created_at', { ascending: false })
         .range(offset, offset + ITEMS_PER_PAGE - 1);
 
       if (error) {
